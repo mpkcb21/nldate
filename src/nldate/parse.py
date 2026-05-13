@@ -85,7 +85,15 @@ def parse(s: str, today: date | None = None) -> date:
     next_match = re.match(r"next (\w+)", text)
     if next_match:
         weekday_str = next_match.group(1)
-        weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+        weekdays = [
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+        ]
         if weekday_str in weekdays:
             target = weekdays.index(weekday_str)
             current = today.weekday()
@@ -98,7 +106,15 @@ def parse(s: str, today: date | None = None) -> date:
     last_match = re.match(r"last (\w+)", text)
     if last_match:
         weekday_str = last_match.group(1)
-        weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+        weekdays = [
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+        ]
         if weekday_str in weekdays:
             target = weekdays.index(weekday_str)
             current = today.weekday()
@@ -111,7 +127,15 @@ def parse(s: str, today: date | None = None) -> date:
     this_match = re.match(r"this (\w+)", text)
     if this_match:
         weekday_str = this_match.group(1)
-        weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+        weekdays = [
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+        ]
         if weekday_str in weekdays:
             target = weekdays.index(weekday_str)
             current = today.weekday()
