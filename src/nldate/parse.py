@@ -27,22 +27,21 @@ WORD_TO_NUM = {
     "eighteen": 18,
     "nineteen": 19,
     "twenty": 20,
+    "thirty": 30,
+    "forty": 40,
+    "fifty": 50,
+    "sixty": 60,
+    "ninety": 90,
 }
 
 
 def _normalize(text: str) -> str:
-    """Replace written-out numbers with digits."""
     for word, num in WORD_TO_NUM.items():
-        text = re.sub(
-            rf"\b{word}\b",
-            str(num),
-            text,
-        )
+        text = re.sub(rf"\b{word}\b", str(num), text)
     return text
 
 
 def _parse_unit(n: int, unit: str, direction: int, base: date) -> date:
-    """Apply n units in direction (+1 or -1) to base date."""
     if "day" in unit:
         return base + timedelta(days=direction * n)
     elif "week" in unit:
@@ -61,143 +60,105 @@ def parse(s: str, today: date | None = None) -> date:
     text = s.strip().lower()
     text = _normalize(text)
 
-    # "today"
+    # simple keywords
     if text == "today":
         return today
-
-    # "tomorrow"
     if text == "tomorrow":
         return today + timedelta(days=1)
-
-    # "yesterday"
     if text == "yesterday":
         return today + timedelta(days=-1)
-
-    # "the day after tomorrow"
-    if text == "the day after tomorrow":
+    if text in ("the day after tomorrow", "day after tomorrow"):
         return today + timedelta(days=2)
-
-    # "the day before yesterday"
-    if text == "the day before yesterday":
+    if text in ("the day before yesterday", "day before yesterday"):
         return today + timedelta(days=-2)
 
+    weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+
     # "next <weekday>"
-    next_match = re.match(r"next (\w+)", text)
-    if next_match:
-        weekday_str = next_match.group(1)
-        weekdays = [
-            "monday",
-            "tuesday",
-            "wednesday",
-            "thursday",
-            "friday",
-            "saturday",
-            "sunday",
-        ]
-        if weekday_str in weekdays:
-            target = weekdays.index(weekday_str)
-            current = today.weekday()
-            days_ahead = (target - current) % 7
-            if days_ahead == 0:
-                days_ahead = 7
-            return today + timedelta(days=days_ahead)
+    m = re.match(r"next (\w+)", text)
+    if m and m.group(1) in weekdays:
+        target = weekdays.index(m.group(1))
+        days_ahead = (target - today.weekday()) % 7 or 7
+        return today + timedelta(days=days_ahead)
 
     # "last <weekday>"
-    last_match = re.match(r"last (\w+)", text)
-    if last_match:
-        weekday_str = last_match.group(1)
-        weekdays = [
-            "monday",
-            "tuesday",
-            "wednesday",
-            "thursday",
-            "friday",
-            "saturday",
-            "sunday",
-        ]
-        if weekday_str in weekdays:
-            target = weekdays.index(weekday_str)
-            current = today.weekday()
-            days_behind = (current - target) % 7
-            if days_behind == 0:
-                days_behind = 7
-            return today + timedelta(days=-days_behind)
+    m = re.match(r"last (\w+)", text)
+    if m and m.group(1) in weekdays:
+        target = weekdays.index(m.group(1))
+        days_behind = (today.weekday() - target) % 7 or 7
+        return today + timedelta(days=-days_behind)
 
     # "this <weekday>"
-    this_match = re.match(r"this (\w+)", text)
-    if this_match:
-        weekday_str = this_match.group(1)
-        weekdays = [
-            "monday",
-            "tuesday",
-            "wednesday",
-            "thursday",
-            "friday",
-            "saturday",
-            "sunday",
-        ]
-        if weekday_str in weekdays:
-            target = weekdays.index(weekday_str)
-            current = today.weekday()
-            days_ahead = (target - current) % 7
-            return today + timedelta(days=days_ahead)
+    m = re.match(r"this (\w+)", text)
+    if m and m.group(1) in weekdays:
+        target = weekdays.index(m.group(1))
+        days_ahead = (target - today.weekday()) % 7
+        return today + timedelta(days=days_ahead)
 
-    unit_pattern = r"(day|days|week|weeks|month|months|year|years)"
+    unit_pat = r"(days?|weeks?|months?|years?)"
 
-    # "in N days/weeks/months/years" or "N days/weeks/months/years from now"
-    in_match = re.match(rf"(?:in )?(\d+) {unit_pattern}(?: from now)?$", text)
-    if in_match and ("from now" in text or text.startswith("in ")):
-        n = int(in_match.group(1))
-        unit = in_match.group(2)
-        return _parse_unit(n, unit, 1, today)
-
-    # "N days/weeks/months/years ago"
-    ago_match = re.match(rf"(\d+) {unit_pattern} ago$", text)
-    if ago_match:
-        n = int(ago_match.group(1))
-        unit = ago_match.group(2)
-        return _parse_unit(n, unit, -1, today)
-
-    # "1 year and 2 months before/after <date>"
-    compound_match = re.match(
-        r"(\d+) (year|years) and (\d+) (month|months) (after|before) (.+)", text
+    # "N years, N months before/after <date>" or "N years and N months before/after <date>"
+    m = re.match(
+        r"(\d+) years?[,]?\s*(?:and\s*)?(\d+) months? (before|after) (.+)", text
     )
-    if compound_match:
-        years = int(compound_match.group(1))
-        months = int(compound_match.group(3))
-        direction = 1 if compound_match.group(5) == "after" else -1
-        base = parse(compound_match.group(6), today)
+    if m:
+        years = int(m.group(1))
+        months = int(m.group(2))
+        direction = 1 if m.group(3) == "after" else -1
+        base = parse(m.group(4), today)
         return base + relativedelta(years=direction * years, months=direction * months)
 
-    # "N days/weeks/months/years before <date>"
-    before_match = re.match(rf"(\d+) {unit_pattern} before (.+)", text)
-    if before_match:
-        n = int(before_match.group(1))
-        unit = before_match.group(2)
-        base = parse(before_match.group(3), today)
-        return _parse_unit(n, unit, -1, base)
+    # "N months, N days before/after <date>"
+    m = re.match(
+        r"(\d+) months?[,]?\s*(?:and\s*)?(\d+) days? (before|after) (.+)", text
+    )
+    if m:
+        months = int(m.group(1))
+        days = int(m.group(2))
+        direction = 1 if m.group(3) == "after" else -1
+        base = parse(m.group(4), today)
+        return base + relativedelta(months=direction * months, days=direction * days)
 
-    # "N days/weeks/months/years after <date>"
-    after_match = re.match(rf"(\d+) {unit_pattern} after (.+)", text)
-    if after_match:
-        n = int(after_match.group(1))
-        unit = after_match.group(2)
-        base = parse(after_match.group(3), today)
+    # "N weeks, N days before/after <date>"
+    m = re.match(
+        r"(\d+) weeks?[,]?\s*(?:and\s*)?(\d+) days? (before|after) (.+)", text
+    )
+    if m:
+        weeks = int(m.group(1))
+        days = int(m.group(2))
+        direction = 1 if m.group(3) == "after" else -1
+        base = parse(m.group(4), today)
+        return base + timedelta(weeks=direction * weeks, days=direction * days)
+
+    # "N before/after <date>"
+    m = re.match(rf"(\d+) {unit_pat} (before|after) (.+)", text)
+    if m:
+        n = int(m.group(1))
+        unit = m.group(2)
+        direction = 1 if m.group(3) == "after" else -1
+        base = parse(m.group(4), today)
+        return _parse_unit(n, unit, direction, base)
+
+    # "N from <date or now>"
+    m = re.match(rf"(\d+) {unit_pat} from (.+)", text)
+    if m:
+        n = int(m.group(1))
+        unit = m.group(2)
+        base_str = m.group(3).strip()
+        base = today if base_str in ("now", "today") else parse(base_str, today)
         return _parse_unit(n, unit, 1, base)
 
-    # "N days/weeks/months/years from <date>"
-    from_match = re.match(rf"(\d+) {unit_pattern} from (.+)", text)
-    if from_match:
-        n = int(from_match.group(1))
-        unit = from_match.group(2)
-        base_str = from_match.group(3)
-        if base_str == "now" or base_str == "today":
-            base = today
-        else:
-            base = parse(base_str, today)
-        return _parse_unit(n, unit, 1, base)
+    # "in N <unit>"
+    m = re.match(rf"in (\d+) {unit_pat}$", text)
+    if m:
+        return _parse_unit(int(m.group(1)), m.group(2), 1, today)
 
-    # fallback: try dateutil for absolute dates like "December 1st, 2025"
+    # "N ago"
+    m = re.match(rf"(\d+) {unit_pat} ago$", text)
+    if m:
+        return _parse_unit(int(m.group(1)), m.group(2), -1, today)
+
+    # fallback: dateutil for absolute dates
     try:
         return dateutil_parser.parse(
             s, default=dateutil_parser.parse(today.strftime("%Y-%m-%d"))
