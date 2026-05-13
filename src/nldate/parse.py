@@ -72,7 +72,15 @@ def parse(s: str, today: date | None = None) -> date:
     if text in ("the day before yesterday", "day before yesterday"):
         return today + timedelta(days=-2)
 
-    weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+    weekdays = [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+    ]
 
     # "next <weekday>"
     m = re.match(r"next (\w+)", text)
@@ -120,9 +128,7 @@ def parse(s: str, today: date | None = None) -> date:
         return base + relativedelta(months=direction * months, days=direction * days)
 
     # "N weeks, N days before/after <date>"
-    m = re.match(
-        r"(\d+) weeks?[,]?\s*(?:and\s*)?(\d+) days? (before|after) (.+)", text
-    )
+    m = re.match(r"(\d+) weeks?[,]?\s*(?:and\s*)?(\d+) days? (before|after) (.+)", text)
     if m:
         weeks = int(m.group(1))
         days = int(m.group(2))
