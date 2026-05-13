@@ -160,7 +160,7 @@ def parse(s: str, today: date | None = None) -> date:
 
     # "1 year and 2 months before/after <date>"
     compound_match = re.match(
-        rf"(\d+) (year|years) and (\d+) (month|months) (after|before) (.+)", text
+        r"(\d+) (year|years) and (\d+) (month|months) (after|before) (.+)", text
     )
     if compound_match:
         years = int(compound_match.group(1))
