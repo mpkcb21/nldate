@@ -54,7 +54,9 @@ def test_days_after_absolute():
 
 def test_compound_after():
     today = date(2025, 6, 15)
-    assert parse("1 year and 2 months after January 1st, 2025", today) == date(2026, 3, 1)
+    assert parse("1 year and 2 months after January 1st, 2025", today) == date(
+        2026, 3, 1
+    )
 
 
 def test_absolute_date():

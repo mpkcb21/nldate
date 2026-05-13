@@ -9,6 +9,8 @@ def parse(s: str, today: date | None = None) -> date:
         today = date.today()
 
     text = s.strip().lower()
+    # normalize written-out "a" -> "1", e.g. "a week ago" -> "1 week ago"
+    text = re.sub(r"\ba\b (day|week|month|year)", r"1 \1", text)
 
     # "today"
     if text == "today":
@@ -26,7 +28,15 @@ def parse(s: str, today: date | None = None) -> date:
     next_match = re.match(r"next (\w+)", text)
     if next_match:
         weekday_str = next_match.group(1)
-        weekdays = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]
+        weekdays = [
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+        ]
         if weekday_str in weekdays:
             target = weekdays.index(weekday_str)
             current = today.weekday()
@@ -39,7 +49,15 @@ def parse(s: str, today: date | None = None) -> date:
     last_match = re.match(r"last (\w+)", text)
     if last_match:
         weekday_str = last_match.group(1)
-        weekdays = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]
+        weekdays = [
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+        ]
         if weekday_str in weekdays:
             target = weekdays.index(weekday_str)
             current = today.weekday()
@@ -63,7 +81,9 @@ def parse(s: str, today: date | None = None) -> date:
             return today + relativedelta(years=n)
 
     # "N days/weeks/months/years ago"
-    ago_match = re.match(r"(\d+) (day|days|week|weeks|month|months|year|years) ago", text)
+    ago_match = re.match(
+        r"(\d+) (day|days|week|weeks|month|months|year|years) ago", text
+    )
     if ago_match:
         n = int(ago_match.group(1))
         unit = ago_match.group(2)
@@ -77,7 +97,9 @@ def parse(s: str, today: date | None = None) -> date:
             return today + relativedelta(years=-n)
 
     # "N days/weeks/months/years before <date>"
-    before_match = re.match(r"(\d+) (day|days|week|weeks|month|months|year|years) before (.+)", text)
+    before_match = re.match(
+        r"(\d+) (day|days|week|weeks|month|months|year|years) before (.+)", text
+    )
     if before_match:
         n = int(before_match.group(1))
         unit = before_match.group(2)
@@ -92,7 +114,9 @@ def parse(s: str, today: date | None = None) -> date:
             return base + relativedelta(years=-n)
 
     # "N days/weeks/months/years after <date>"
-    after_match = re.match(r"(\d+) (day|days|week|weeks|month|months|year|years) after (.+)", text)
+    after_match = re.match(
+        r"(\d+) (day|days|week|weeks|month|months|year|years) after (.+)", text
+    )
     if after_match:
         n = int(after_match.group(1))
         unit = after_match.group(2)
@@ -120,6 +144,8 @@ def parse(s: str, today: date | None = None) -> date:
 
     # fallback: try dateutil for absolute dates like "December 1st, 2025"
     try:
-        return dateutil_parser.parse(s, default=dateutil_parser.parse(today.strftime("%Y-%m-%d"))).date()
+        return dateutil_parser.parse(
+            s, default=dateutil_parser.parse(today.strftime("%Y-%m-%d"))
+        ).date()
     except Exception:
         raise ValueError(f"Could not parse date string: {s!r}")
