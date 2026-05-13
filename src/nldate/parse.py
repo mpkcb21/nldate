@@ -9,14 +9,29 @@ def parse(s: str, today: date | None = None) -> date:
         today = date.today()
 
     text = s.strip().lower()
-# normalize written-out numbers e.g. "two weeks ago" -> "2 weeks ago"
+    # normalize written-out numbers e.g. "two weeks ago" -> "2 weeks ago"
     word_to_num = {
-        "a": "1", "an": "1", "one": "1", "two": "2", "three": "3",
-        "four": "4", "five": "5", "six": "6", "seven": "7", "eight": "8",
-        "nine": "9", "ten": "10", "eleven": "11", "twelve": "12",
+        "a": "1",
+        "an": "1",
+        "one": "1",
+        "two": "2",
+        "three": "3",
+        "four": "4",
+        "five": "5",
+        "six": "6",
+        "seven": "7",
+        "eight": "8",
+        "nine": "9",
+        "ten": "10",
+        "eleven": "11",
+        "twelve": "12",
     }
     for word, num in word_to_num.items():
-        text = re.sub(rf"\b{word}\b (day|days|week|weeks|month|months|year|years)", rf"{num} \1", text)
+        text = re.sub(
+            rf"\b{word}\b (day|days|week|weeks|month|months|year|years)",
+            rf"{num} \1",
+            text,
+        )
 
     # "today"
     if text == "today":
